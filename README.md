@@ -12,7 +12,8 @@ See the following for a tutorial on NCBI tools:
 
 <https://github.com/ncbi/dbsnp/tree/master/tutorials/Variation%20Services>
 
-Here I (Mike) have added an option `SPDI` that will convert from...
+Here I (Mike) have added an option `SPDI` to the NCBI scripts that
+will convert from...
 
 ```
 chrom : position (1-based) : ref : alt
@@ -24,8 +25,11 @@ chrom : position (1-based) : ref : alt
 
 ## IGVF use case:
 
+Suppose we have a variant list that looks like "1_25253604_hg38_G_A"
+(this is customizable with simple arguments within `make_spdi_list.R`).
+
 ```
-> Rscript make_spdi_list.R
+> Rscript make_spdi_list.R variants.txt
 > head -100 spdi_for_batch_processing.txt > spdi_100.txt
 > python spdi_batch.py -i spdi_100.txt -t SPDI
 
