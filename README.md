@@ -4,7 +4,7 @@ Here I provide a demo for some of the NCBI tools for adding SPDI
 unique IDs to variant lists. Briefly the benefits of SPDI:
 
 * resolves indel ambiguity
-* validates unique IDs, e.g. incorrect alt/ref
+* validates, e.g. incorrect reference allele specification
 * human readable, unique ID with broad usage across consortia
   (dbSNP, ClinVar, etc.), NCBI support including API and toolkits
 
@@ -12,10 +12,37 @@ See the following for a tutorial on NCBI tools:
 
 <https://github.com/ncbi/dbsnp/tree/master/tutorials/Variation%20Services>
 
-## Example:
+Here I (Mike) have added an option `SPDI` that will convert from...
+
+```
+chrom : position (1-based) : ref : alt
+```
+
+(remove spaces)
+
+...to a unique SPDI (0-based and validated).
+
+## IGVF use case:
+
+```
+> Rscript make_spdi_list.R
+> head -100 spdi_for_batch_processing.txt > spdi_100.txt
+> python3.9 spdi_batch.py -i spdi_100.txt -t SPDI
+
+NC_000001.11:25253603:G:A	NC_000001.11:25253603:G:A
+NC_000001.11:25336579:C:G	NC_000001.11:25336579:C:G
+NC_000001.11:25341419:G:A	NC_000001.11:25341419:G:A
+NC_000001.11:25341834:C:T	NC_000001.11:25341834:C:T
+NC_000001.11:25342222:T:C	NC_000001.11:25342222:T:C
+NC_000001.11:25348293:C:T	NC_000001.11:25348293:C:T
+...
+```
+
+## Example with HGVS
 
 ```
 > python spdi_batch.py -i test.txt -t HGVS
+
 NC_000021.9:g.25716261G>A	NC_000021.9:25716260:G:A
 ERROR: status code = 400
 NC_000021.9:g.25716536_25716537insAT	NC_000021.9:25716536::AT

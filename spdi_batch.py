@@ -149,19 +149,22 @@ def spdi2rs(spdi):
     else:
         return ["no rs found"]
 
-
+    
+# new function SPDI -> canonical SPDI
 def spdi2canon(req):
     reqjson = json.loads(req.text)
     spdiobj = reqjson['data']
-    spdi = ':'.join([
-        spdiobj['seq_id'],
-        str(spdiobj['position']),
-        spdiobj['deleted_sequence'],
-        spdiobj['inserted_sequence']])
+    if 'warnings' in spdiobj:
+        spdi = 'warnings'
+    else:
+        spdi = ':'.join([
+            spdiobj['seq_id'],
+            str(spdiobj['position']),
+            spdiobj['deleted_sequence'],
+            spdiobj['inserted_sequence']])
     return spdi
 
 
-# new function SPDI -> canonical SPDI
 def req2spdi(req):
     reqjson = json.loads(req.text)
     spdiobj = reqjson['data']['spdis'][0]
