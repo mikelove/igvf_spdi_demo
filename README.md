@@ -12,20 +12,20 @@ See the following for a tutorial on NCBI tools:
 
 <https://github.com/ncbi/dbsnp/tree/master/tutorials/Variation%20Services>
 
-Here I (Mike) have added an option `SPDI` to the NCBI scripts that
-will convert from...
+## Additions:
+
+* I have added an example script `make_spdi_list.R` for converting from
+arbitrary variant specification (1-based) to SPDI input (0-based) for
+the NCBI Variant Services.
+
+* I have added an option `SPDI` to the NCBI's original script
+  `spdi_batch.py` that will convert from 0-based input:
 
 ```
-chrom : position (0-based) : ref : alt
+chrom:position:ref:alt
 ```
-
-(remove spaces)
 
 ...to a unique SPDI (0-based and validated).
-
-I also have added an example script for converting from arbitrary
-variant specification (1-based) to SPDI input (0-based) for the NCBI
-Variant Services.
 
 ## IGVF use case:
 
