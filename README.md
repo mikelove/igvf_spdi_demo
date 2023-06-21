@@ -27,7 +27,7 @@ chrom : position (1-based) : ref : alt
 ```
 > Rscript make_spdi_list.R
 > head -100 spdi_for_batch_processing.txt > spdi_100.txt
-> python3.9 spdi_batch.py -i spdi_100.txt -t SPDI
+> python spdi_batch.py -i spdi_100.txt -t SPDI
 
 NC_000001.11:25253603:G:A	NC_000001.11:25253603:G:A
 NC_000001.11:25336579:C:G	NC_000001.11:25336579:C:G
