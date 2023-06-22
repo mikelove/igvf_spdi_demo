@@ -154,9 +154,13 @@ def spdi2rs(spdi):
 def spdi2canon(req):
     reqjson = json.loads(req.text)
     spdiobj = reqjson['data']
+    spdi_ok = True
     if 'warnings' in spdiobj:
-        spdi = 'warnings'
-    else:
+        # with gaps: indicates variant overlaps gaps in alignment, not an issue for us
+        if 'Sequences_with_gap' not in spdiobj['warnings'][0]['message']:
+            spdi = 'warnings'
+            spdi_ok = False
+    if spdi_ok:
         spdi = ':'.join([
             spdiobj['seq_id'],
             str(spdiobj['position']),
