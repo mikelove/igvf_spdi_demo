@@ -50,6 +50,14 @@ NC_000001.11:25348293:C:T	NC_000001.11:25348293:C:T
 ...
 ```
 
+**What does `warnings` mean?** This typically means that you have
+mis-specified the reference allele of hg38.
+
+You can check here (don't forget that the above positions are 0-based
+while the genome browser is 1-based):
+
+<https://www.ncbi.nlm.nih.gov/genome/gdv/browser/genome/?id=GCF_000001405.40>
+
 ## Example with HGVS
 
 ```
