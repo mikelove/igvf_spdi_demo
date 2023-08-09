@@ -3,6 +3,9 @@
 # note that this script assumes input is 1-based position
 args <- commandArgs(trailingOnly=TRUE)
 
+# no scientific notation
+options(scipen=999)
+
 # what character separates the fields
 split_char <- ":"
 # which fields contain the sequence, position, ref, and alt
