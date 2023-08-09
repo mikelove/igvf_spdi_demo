@@ -11,6 +11,9 @@ if (length(args) != 2) {
 infile <- args[1]
 outfile <- args[2]
 
+# no scientific notation
+options(scipen=999)
+
 ################################ User input ###################################
 
 max_len = 250 # maximum distance to search genome in overprecision algorithm
