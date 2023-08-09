@@ -2,6 +2,9 @@
 # note that this script assumes input is 1-based position
 args <- commandArgs(trailingOnly=TRUE)
 
+# no scientific notation
+options(scipen=999)
+
 # which fields contain the sequence, position, ref, and alt
 info_idx <- c(2, 3, 4, 5)
 
