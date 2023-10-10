@@ -27,28 +27,6 @@ RefSeq <- paste0(RefSeq_start, RefSeq_mid, ".", RefSeq_end)
 RefSeq_map <- data.frame(chr = paste0("chr", c(1:22, "X", "Y")), 
                 NC = RefSeq)
 
-
-if (FALSE) {
-	## This version processes the entire file at a time
-	## Read the input file
-	spdi <- read.table(infile, stringsAsFactors=F)
-	colnames(spdi) <- "SPDI"
-
-	## Process and format
-	spdiSplit <- as.data.frame(do.call(rbind, strsplit(spdi$SPDI, ":")), stringsAsFactors=F)
-	colnames(spdiSplit) <- c("chrRefSeqID","position","ReferenceAllele","AlternativeAllele")
-	spdiSplit$SPDI <- spdi$SPDI
-	spdiSplit <- merge(spdiSplit, RefSeq_map, by.x="chrRefSeqID", by.y="NC", all.x=TRUE)
-	stopifnot(all(!is.na(spdiSplit$chr)))
-
-	spdiBed <- spdiSplit %>%
-		transmute(chr=chr, start=position, end=as.numeric(position)+nchar(ReferenceAllele), name=SPDI) %>%
-		mutate(end=ifelse(end==start,end+1,end))
-
-	## Write to stdout
-	write.table(spdiBed, sep='\t', quote=F, col.names=T, row.names=F)
-}
-
 # Open the input file
 input_file <- file(infile, "r")
 
