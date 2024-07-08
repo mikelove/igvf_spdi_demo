@@ -11,7 +11,7 @@ info_idx <- c(2, 3, 4, 5)
 v <- read.table(args[1])
 
 # SPDI uses RefSeq names for chromosomes, and is 0-based for position.
-# assuming that input is 0-based we need to subtract 1
+# assuming that input is 1-based we need to subtract 1
 out <- paste(v[,info_idx[1]], # sequence
              as.numeric(v[,info_idx[2]]) - 1, # position (0-based)
              v[,info_idx[3]], # deleted

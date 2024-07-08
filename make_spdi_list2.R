@@ -18,7 +18,7 @@ chrom <- cm[,4]
 names(chrom) <- cm[,1]
 
 # SPDI uses RefSeq names for chromosomes, and is 0-based for position.
-# assuming that input is 0-based we need to subtract 1
+# assuming that input is 1-based we need to subtract 1
 out <- sapply(s, function(x) paste(chrom[x[info_idx[1]]], # sequence
                                    as.numeric(x[info_idx[2]]) - 1, # position (0-based)
                                    x[info_idx[3]], # deleted
