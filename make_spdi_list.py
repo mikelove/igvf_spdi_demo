@@ -64,7 +64,7 @@ def cli(input_file, output_file, column_separator, string_separator, column_name
         if len(user_string.split(separator)) < 4:
             raise ValueError('Not enough indices given: Expected chrom, pos, ref, alt position in user_string')
         split_string = user_string.split(separator)
-        zero_based_position = int(split_string[indices[1]]) # - 1 # (input: 1-based => 0-based)
+        zero_based_position = int(split_string[indices[1]]) - 1 # (input: 1-based => 0-based)
         return f'{chrom_refseq_dict[split_string[indices[0]]]}:{zero_based_position}:{split_string[indices[2]]}:{split_string[indices[3]]}'
 
 
@@ -79,7 +79,7 @@ def cli(input_file, output_file, column_separator, string_separator, column_name
         return df
 
 
-    def call_spdi_batch(spdi_batch_path, spdi_batch_output):
+    def call_spdi_batch(spdi_batch_path, spdi_batch_processing_output, spdi_batch_output):
         """
         Calls the skript spdi_batch.py with the generated SPDI file and write to a file
         example call: python spdi_batch.py -i spdi_100.txt -t SPDI | grep "NC_" > spdi_batch_output.txt (see https://github.com/mikelove/igvf_spdi_demo for more details)
@@ -109,7 +109,7 @@ def cli(input_file, output_file, column_separator, string_separator, column_name
         # check if in the second column are warnings
         spdi_batch_output_df = pd.read_csv(spdi_batch_output, sep="\t", header=None)
         spdi_batch_output_df.columns = ['given_SPDI', 'canonical_SPDI']
-        warnings = spdi_batch_output_df[spdi_batch_output_df["canonical_SPDI"].str.contains("WARNING")]
+        warnings = spdi_batch_output_df.loc[spdi_batch_output_df["canonical_SPDI"].str.contains("warnings")]
         if warnings.shape[0] > 0:
             print("Warnings in SPDI batch processing:")
             print(warnings)
@@ -128,8 +128,8 @@ def cli(input_file, output_file, column_separator, string_separator, column_name
     if call_spdi_batch:
         # write SPDI column to file for batch processing
         speedy_df[['SPDI']].to_csv(spdi_batch_processing_output, index=False)
-        if call_spdi_batch(spdi_batch_path, spdi_batch_output):
-            print('NOTE: spdi batch script was called.\nOutput will be checked...')
+        if call_spdi_batch(spdi_batch_path, spdi_batch_processing_output, spdi_batch_output):
+            print('NOTE: spdi batch script was called.\nNOTE: Output will be checked...')
         if check_spdi_batch(spdi_batch_output):
             print('NOTE: No warnings detected using the spdi_batch script')
         print('NOTE: Removing Temporary Files')
