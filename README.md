@@ -8,6 +8,15 @@ unique IDs to variant lists. Briefly the benefits of SPDI:
 * human readable, unique ID with broad usage across consortia
   (dbSNP, ClinVar, etc.), NCBI support including API and toolkits
 
+The scripts here will provide the **Canonical SPDI** for variants. This 
+means that it is the *unique representation*, particularly important for 
+indels which can have arbitrary allelic representation. You must use the 
+Canonical SPDI to refer to indels in order to allow comparison of variants 
+across centers. The Canonical SPDI will appear in the right column after
+running the script. It will not give a warning or error, but will fix the
+allelic representation if it is not canonical, so you should check to see
+if the left and right columns differ for any rows.
+
 See the following for a tutorial on NCBI tools:
 
 <https://github.com/ncbi/dbsnp/tree/master/tutorials/Variation%20Services>
