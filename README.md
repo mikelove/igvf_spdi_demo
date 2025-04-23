@@ -1,12 +1,19 @@
 # Demo of using SPDI tools for IGVF variant lists
 
-Here I provide a demo for some of the NCBI tools for adding SPDI
+This repository contains some tools/scripts for adding SPDI
 unique IDs to variant lists. Briefly the benefits of SPDI:
 
 * resolves indel ambiguity
 * validates, e.g. incorrect reference allele specification
 * human readable, unique ID with broad usage across consortia
   (dbSNP, ClinVar, etc.), NCBI support including API and toolkits
+
+There is a script `spdi_batch.py` that leverages the NCBI API to provide 
+SPDI. There is also an R script `jon_rosen_make_spdi.R` that provides
+a faster version that doesn't make use of an API but normalizes alleles
+locally (and has been checked across 1000s of indels). We provide the latter
+although for ultimate certainty for aligning with NCBI you should check 
+with the former. 
 
 The scripts here will provide the **Canonical SPDI** for variants. This 
 means that it is the *unique representation*, particularly important for 

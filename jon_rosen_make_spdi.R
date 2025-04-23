@@ -9,6 +9,9 @@ if (length(args) != 2) {
   quit("no")
 }
 
+# an example `infile` is provided:
+# infile <- "test_table.txt"
+
 infile <- args[1]
 outfile <- args[2]
 
