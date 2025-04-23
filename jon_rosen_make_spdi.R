@@ -8,24 +8,41 @@ if (length(args) != 2) {
   cat("Input variant file and name of output file\n")
   quit("no")
 }
+
 infile <- args[1]
 outfile <- args[2]
 
 # no scientific notation
-options(scipen=999)
+options(scipen = 999)
 
 ################################ User input ###################################
 
-max_len = 250 # maximum distance to search genome in overprecision algorithm
+max_len <- 250 # maximum distance to search genome in overprecision algorithm
+
+input_chr_are_ncbi <- FALSE # whether input chromosomes are NCBI/RefSeq style
+# otherwise it assumes input chromosomes are UCSC style (chr1, ...)
+
+# the input file should have 4 columns (no header):
+# 1. chromosome
+# 2. position (hg38)
+# 3. ref allele
+# 4. alt allele
 
 ###############################################################################
 
 # Read in list of variants
 var <- read.table(infile, stringsAsFactors=F, header = F)
-colnames(var) <- c("genome","ncbi_chr","hg38_pos","ref","alt")
-var$seqnames <- sub("^0","",substr(var$ncbi_chr, 8,9))
-var$seqnames <- sub("23","X",var$seqnames)
-var$chr <- paste0("chr",var$seqnames)
+colnames(var) <- c("genome","input_chr","hg38_pos","ref","alt")
+
+if (input_chr_are_ncbi) {
+  var$seqnames <- sub("^0","",substr(var$input_chr, 8, 9))
+  var$seqnames <- sub("23","X",var$seqnames)
+  var$chr <- paste0("chr",var$seqnames)
+} else {
+  var$seqnames <- sub("chr","",var$input_chr)
+  var$chr <- var$input_chr
+}
+
 var$ref_len <- nchar(var$ref) # Add length of ref in bp
 var$alt_len <- nchar(var$alt) # Add length of alt in bp
 var$indel_len <- var$ref_len - var$alt_len
@@ -42,33 +59,33 @@ X.seq <- getSeq(Hsapiens, X.gr)
 
 # Function to identify insertion sequence
 # in atypical ref/alt vcf format cases
-get_indel = function(a, b) {
-  a_len = nchar(a)
-  b_len = nchar(b)
+get_indel <- function(a, b) {
+  a_len <- nchar(a)
+  b_len <- nchar(b)
   
   if (a_len > b_len) {
-    long = a
-    long_end = a_len
-    short = b
-    short_end = b_len
+    long <- a
+    long_end <- a_len
+    short <- b
+    short_end <- b_len
   } else {
-    long = b
-    long_end = b_len
-    short = a
-    short_end = a_len
+    long <- b
+    long_end <- b_len
+    short <- a
+    short_end <- a_len
   }
-  l = abs(a_len - b_len)
-  start = 1
+  l <- abs(a_len - b_len)
+  start <- 1
   
   while (substr(long, start, start) == substr(short, start, start)) {
     if (start == short_end) {
       return(list(substr(long, start+1, long_end), start+1))
     }
-    start = start + 1
+    start <- start + 1
   }
   while (substr(long, long_end, long_end) ==  substr(short, short_end, short_end)) {
-    long_end = long_end - 1
-    short_end = short_end - 1
+    long_end <- long_end - 1
+    short_end <- short_end - 1
     if (long_end - start < l) {
       return(list(substr(long, start, long_end), start))
     }
@@ -190,12 +207,12 @@ RefSeq_map <- data.frame(chr = paste0("chr", c(1:22, "X")),
 # This should be improved to avoid looping
 # Current rate is ~ 40k variants / min.
 n <- length(X.seq)
-res <- var[,c("ncbi_chr","chr","hg38_pos","ref","alt")]
+res <- var[,c("input_chr","chr","hg38_pos","ref","alt")]
 colnames(res) <- c("chrRefSeqID","chr","position","ReferenceAllele","AlternativeAllele")
 res$SPDI <- NA
 for (i in 1:n) {
-  #res[i, 1] <- c(var[i, "input_variant"])
   res[i, "SPDI"] <- speedy_name(X.seq[i], var[i, ])[2]
 }
 
 write.table(res, file = outfile, row.names = F, col.names = T, quote = F, sep = "\t")
+
