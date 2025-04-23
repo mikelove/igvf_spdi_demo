@@ -30,10 +30,11 @@ input_chr_are_ncbi <- FALSE # whether input chromosomes are NCBI/RefSeq style
 
 ###############################################################################
 
-# Read in list of variants
-var <- read.table(infile, stringsAsFactors=F, header = F)
-colnames(var) <- c("genome","input_chr","hg38_pos","ref","alt")
+# Read in list of variants (assuming no header, but column order above)
+var <- read.table(infile, stringsAsFactors=F, header=F)
+colnames(var) <- c("input_chr","hg38_pos","ref","alt") 
 
+# do some cleanup and add a version of chrom without 'chr'
 if (input_chr_are_ncbi) {
   var$seqnames <- sub("^0","",substr(var$input_chr, 8, 9))
   var$seqnames <- sub("23","X",var$seqnames)
@@ -48,14 +49,29 @@ var$alt_len <- nchar(var$alt) # Add length of alt in bp
 var$indel_len <- var$ref_len - var$alt_len
 
 # Get reference sequences around variants
-X <- var %>%
-  mutate(start = hg38_pos - max_len, end = hg38_pos + max_len)
-X.gr <- makeGRangesFromDataFrame(X,
-  seqnames.field = "seqnames",
-  start.field = "start",
-  end.field = "end")
-X.seq <- getSeq(Hsapiens, X.gr)
+ref_ranges <- var |>
+  mutate(start = hg38_pos - max_len,
+         end = hg38_pos + max_len) |>
+  makeGRangesFromDataFrame(
+    seqnames.field = "seqnames",
+    start.field = "start",
+    end.field = "end"
+  )
 
+dna <- getSeq(Hsapiens, ref_ranges)
+
+# Now define a chrom name map and two helper functions
+
+# Map between GRCh38 molecule name and RefSeq sequence name
+RefSeq_start <- rep("NC_0000", 23)
+RefSeq_mid <- c(paste0("0", as.character(1:9)), as.character(10:23))
+RefSeq_end <- as.character(c(11, 12, 12, 12, 10, 12, 14, 11, 12, 11,
+  10, 12, 11, 9, 10, 10, 11, 10, 10, 11, 9, 11, 11))
+RefSeq <- paste0(RefSeq_start, RefSeq_mid, ".", RefSeq_end) 
+RefSeq_map <- data.frame(
+  chr = paste0("chr", c(1:22, "X")), 
+  NC = RefSeq
+)
 
 # Function to identify insertion sequence
 # in atypical ref/alt vcf format cases
@@ -99,120 +115,117 @@ get_indel <- function(a, b) {
 
 
 # Version of NCBI Variant Overprecision Correction Algorithm
-speedy_name <- function(dnaseq, var) {
-  seq_str <- as.character(dnaseq)
-  ref <- substr(seq_str, max_len + 1, max_len + 1 + var$ref_len - 1)
+# dna is the DNA sequence
+# var is the table of variant data prepared above
+# map is the map from GRCh38 to RefSeq NC names
+# spdi is logical to return true SPDI (TRUE) or vars with 'chr1' names (FALSE)
+variant_normalization <- function(dna, var, map, spdi=TRUE) {
+
+  ref <- substr(dna, max_len + 1, max_len + 1 + var$ref_len - 1)
   
   if (ref != var$ref) { 
-    return(rep("Error_Ref_Mismatch", 2))
+    return("Error_Ref_Mismatch")
   } 
   
   if (var$ref_len == 1 & var$alt_len ==  1) {
-    speedy <- paste(var$chr, var$hg38_pos, var$ref, var$alt, sep = ":")
-    spdi <- paste(RefSeq_map[RefSeq_map$chr == var$chr, 2], 
-      var$hg38_pos - 1, var$ref, var$alt, sep = ":")
-    return(c(speedy, spdi))
+    if (spdi) {
+      return(paste(map[map$chr == var$chr, 2], 
+                   var$hg38_pos - 1, var$ref, var$alt, sep = ":"))
+    } else {
+      return(paste(var$chr, var$hg38_pos, var$ref, var$alt, sep = ":"))
+    }
   }
 
   if (var$ref_len == var$alt_len & var$ref_len > 1) {
     end <- nchar(var$ref)
     if (substr(var$ref, 1, 1) == substr(var$alt, 1, 1) |
         substr(var$ref, end, end) == substr(var$alt, end, end)) {
-      return(rep("Error_Allele_Format", 2))
+      return("Error_Allele_Format")
     } else {
-      speedy <- paste(var$chr, var$hg38_pos, var$ref, var$alt, sep = ":")
-      spdi <- paste(RefSeq_map[RefSeq_map$chr == var$chr, 2],
-        var$hg38_pos - 1, var$ref, var$alt, sep = ":")
-      return(c(speedy, spdi))
+      if (spdi) {
+        return(paste(map[map$chr == var$chr, 2],
+                     var$hg38_pos - 1, var$ref, var$alt, sep = ":"))
+      } else {
+        return(paste(var$chr, var$hg38_pos, var$ref, var$alt, sep = ":"))
+      }
     }
   }
   
   l <- abs(var$indel_len)
-  #indel <- max(var$ref, var$alt)
-  #indel <- substr(indel, 2, l+1)
   
   if (var$ref_len > var$alt_len) {
     insert <- get_indel(var$ref, var$alt)
     indel <- insert[[1]]
     start <- insert[[2]]
-    #indel <- substr(var$ref, 2, var$ref_len)
     k <- 1
     d <- max_len + start + l
-    while (substr(indel, k, k) == substr(dnaseq, d, d)) {
+    while (substr(indel, k, k) == substr(dna, d, d)) {
       d <- d + 1
       k <- k + 1
       if (k == l+1) { k <- 1 }
     }
     k <- l
     u <- max_len + start
-    while (substr(indel, k, k) == substr(dnaseq, u-1, u-1)) {
+    while (substr(indel, k, k) == substr(dna, u-1, u-1)) {
       u <- u - 1
       k <- k - 1
       if (k == 0) { k <- l }
     }
-    speedy <- paste(var$chr, var$hg38_pos+u-(max_len + 1), 
-                substr(dnaseq, u, d-1), substr(dnaseq, u, d-1-l),
-                sep = ":")
-    spdi <- paste(RefSeq_map[RefSeq_map$chr == var$chr, 2], 
-              var$hg38_pos+u-(max_len + 1) - 1,
-              substr(dnaseq, u, d-1), substr(dnaseq, u, d-1-l),
-              sep = ":") 
-    return(c(speedy, spdi))
+    if (spdi) {      
+      return(paste(map[map$chr == var$chr, 2], 
+                   var$hg38_pos+u-(max_len + 1) - 1,
+                   substr(dna, u, d-1), substr(dna, u, d-1-l),
+                   sep = ":"))
+    } else {
+      return(paste(var$chr, var$hg38_pos+u-(max_len + 1), 
+                   substr(dna, u, d-1), substr(dna, u, d-1-l),
+                   sep = ":"))
+    }
   }
   
   if (var$ref_len < var$alt_len) {
     insert <- get_indel(var$ref, var$alt)
     indel <- insert[[1]]
     start <- insert[[2]]
-    #indel <- substr(var$alt, 2, var$alt_len)
-    subseq(dnaseq, start = max_len + 1, width = var$ref_len) <- var$alt
+    subseq(dna, start = max_len + 1, width = var$ref_len) <- var$alt
     k <- 1
     d <- max_len + start + l
-    while (substr(indel, k, k) == substr(dnaseq, d, d)) {
+    while (substr(indel, k, k) == substr(dna, d, d)) {
       d <- d + 1
       k <- k + 1
       if (k == l+1) { k <- 1 }
     }
     k <- l
     u <- max_len + start
-    while (substr(indel, k, k) == substr(dnaseq, u-1, u-1)) {
+    while (substr(indel, k, k) == substr(dna, u-1, u-1)) {
       u <- u - 1
       k <- k - 1
       if (k == 0) { k <- l }
     }
-    speedy <- paste(var$chr, var$hg38_pos+u-(max_len + 1), 
-                substr(dnaseq, u, d-1-l), substr(dnaseq, u, d-1),
-                sep = ":")
-    spdi <- paste(RefSeq_map[RefSeq_map$chr == var$chr, 2],
-              var$hg38_pos+u-(max_len + 1) - 1,
-              substr(dnaseq, u, d-1-l), substr(dnaseq, u, d-1),
-              sep = ":")
-    return(c(speedy, spdi))
+    
+    if (spdi) {
+      return(paste(map[map$chr == var$chr, 2],
+                   var$hg38_pos+u-(max_len + 1) - 1,
+                   substr(dna, u, d-1-l), substr(dna, u, d-1),
+                   sep = ":"))
+    } else {
+      return(paste(var$chr, var$hg38_pos+u-(max_len + 1), 
+                   substr(dna, u, d-1-l), substr(dna, u, d-1),
+                   sep = ":"))
+    }
   }
 }
-
-
-# Map between GRCh38 molecule name and RefSeq sequence name
-
-RefSeq_start <- rep("NC_0000", 23)
-RefSeq_mid <- c(paste0("0", as.character(1:9)),
-  as.character(10:23))
-RefSeq_end <- as.character(c(11, 12, 12, 12, 10, 12, 14, 11, 12, 11,
-  10, 12, 11, 9, 10, 10, 11, 10, 10, 11, 9, 11, 11))
-RefSeq <- paste0(RefSeq_start, RefSeq_mid, ".", RefSeq_end) 
-RefSeq_map <- data.frame(chr = paste0("chr", c(1:22, "X")), 
-                NC = RefSeq)
 
 # Loop through variants in list
 # This should be improved to avoid looping
 # Current rate is ~ 40k variants / min.
-n <- length(X.seq)
-res <- var[,c("input_chr","chr","hg38_pos","ref","alt")]
-colnames(res) <- c("chrRefSeqID","chr","position","ReferenceAllele","AlternativeAllele")
-res$SPDI <- NA
+n <- nrow(var)
+out <- var[,c("input_chr","chr","hg38_pos","ref","alt")]
+out$SPDI <- NA
+
 for (i in 1:n) {
-  res[i, "SPDI"] <- speedy_name(X.seq[i], var[i, ])[2]
+  out[i, "SPDI"] <- variant_normalization(dna[i], var[i,], RefSeq_map, spdi=TRUE)
 }
 
-write.table(res, file = outfile, row.names = F, col.names = T, quote = F, sep = "\t")
+write.table(out, file = outfile, row.names = F, col.names = T, quote = F, sep = "\t")
 
