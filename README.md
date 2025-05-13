@@ -15,6 +15,14 @@ locally (and has been checked across 1000s of indels). We provide the latter
 although for ultimate certainty for aligning with NCBI you should check 
 with the former. 
 
+There is a script `spdiToSequence.R` that will write out allele sequence
+(including flanking basepairs on either side) to a file from SPDI input.
+This can be called like so (here adding 10bp on either side):
+
+```
+Rscript spdiToSequence.R test_data/spdi_100.txt 10 test_out.txt
+```
+
 The scripts here will provide the **Canonical SPDI** for variants. This 
 means that it is the *unique representation*, particularly important for 
 indels which can have arbitrary allelic representation. You must use the 
