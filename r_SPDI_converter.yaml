@@ -1,0 +1,17 @@
+# Conda/mamba environment build for running spdiToSequence.R
+# defaults to minimum package versions
+# Author: Michael T. Montgomery
+# Date: 2025-05-13
+
+name: r_SPDI_converter
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-dplyr
+  - r-tidyr
+  - r-stringr
+  - bioconductor-plyranges
+  - bioconductor-bsgenome.hsapiens.ncbi.grch38
